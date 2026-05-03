@@ -1,526 +1,628 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PAREA European Psychedelic Research Map</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAREA European Psychedelic Research Map</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: #f8f7f4;
-    color: #1a1a1a;
-    min-height: 100vh;
-  }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f8f7f4;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
 
-  header {
-    padding: 18px 24px 14px;
-    background: #fff;
-    border-bottom: 1px solid #e8e4df;
-  }
+    header {
+      padding: 18px 24px 14px;
+      background: #fff;
+      border-bottom: 1px solid #e8e4df;
+    }
 
-  header h1 {
-    font-size: 17px;
-    font-weight: 600;
-    color: #1a1a1a;
-    letter-spacing: -0.01em;
-  }
+    header h1 {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1a1a1a;
+      letter-spacing: -0.01em;
+    }
 
-  header p {
-    font-size: 13px;
-    color: #888;
-    margin-top: 3px;
-  }
+    header p {
+      font-size: 13px;
+      color: #888;
+      margin-top: 3px;
+    }
 
-  #controls {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    padding: 12px 24px;
-    background: #fff;
-    border-bottom: 1px solid #e8e4df;
-    align-items: center;
-  }
+    #controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 12px 24px;
+      background: #fff;
+      border-bottom: 1px solid #e8e4df;
+      align-items: center;
+    }
 
-  #controls span {
-    font-size: 12px;
-    color: #999;
-    margin-right: 4px;
-  }
+    #controls span {
+      font-size: 12px;
+      color: #999;
+      margin-right: 4px;
+    }
 
-  .toggle-btn {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 7px 14px;
-    border-radius: 20px;
-    border: 1.5px solid;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    background: transparent;
-    transition: all 0.15s ease;
-    font-family: inherit;
-  }
+    .toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1.5px solid;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      background: transparent;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
 
-  .toggle-btn .dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    transition: background 0.15s;
-  }
+    .toggle-btn .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
 
-  .toggle-btn[data-cat="Clinical Trial"] { border-color: #2563a8; color: #2563a8; }
-  .toggle-btn[data-cat="Clinical Trial"] .dot { background: #2563a8; }
-  .toggle-btn[data-cat="Clinical Trial"].active { background: #2563a8; color: #fff; }
-  .toggle-btn[data-cat="Clinical Trial"].active .dot { background: #fff; }
+    .toggle-btn[data-cat="Clinical Trial"] {
+      border-color: #2563a8;
+      color: #2563a8;
+    }
 
-  .toggle-btn[data-cat="Access Framework"] { border-color: #2d7a3a; color: #2d7a3a; }
-  .toggle-btn[data-cat="Access Framework"] .dot { background: #2d7a3a; }
-  .toggle-btn[data-cat="Access Framework"].active { background: #2d7a3a; color: #fff; }
-  .toggle-btn[data-cat="Access Framework"].active .dot { background: #fff; }
+    .toggle-btn[data-cat="Clinical Trial"] .dot {
+      background: #2563a8;
+    }
 
-  .toggle-btn[data-cat="Organisation"] { border-color: #9b3060; color: #9b3060; }
-  .toggle-btn[data-cat="Organisation"] .dot { background: #9b3060; }
-  .toggle-btn[data-cat="Organisation"].active { background: #9b3060; color: #fff; }
-  .toggle-btn[data-cat="Organisation"].active .dot { background: #fff; }
+    .toggle-btn[data-cat="Clinical Trial"].active {
+      background: #2563a8;
+      color: #fff;
+    }
 
-  #map {
-    height: calc(100vh - 130px);
-    width: 100%;
-    z-index: 1;
-  }
+    .toggle-btn[data-cat="Clinical Trial"].active .dot {
+      background: #fff;
+    }
 
-  .leaflet-container {
-    background: #dde8f0;
-    font-family: inherit;
-  }
+    .toggle-btn[data-cat="Access Framework"] {
+      border-color: #2d7a3a;
+      color: #2d7a3a;
+    }
 
-  .leaflet-popup-content-wrapper {
-    border-radius: 10px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.13);
-    padding: 0;
-    overflow: hidden;
-    max-width: 300px;
-    min-width: 220px;
-  }
+    .toggle-btn[data-cat="Access Framework"] .dot {
+      background: #2d7a3a;
+    }
 
-  .leaflet-popup-content {
-    margin: 0;
-    width: auto !important;
-  }
+    .toggle-btn[data-cat="Access Framework"].active {
+      background: #2d7a3a;
+      color: #fff;
+    }
 
-  .leaflet-popup-tip {
-    background: #fff;
-  }
+    .toggle-btn[data-cat="Access Framework"].active .dot {
+      background: #fff;
+    }
 
-  .popup-inner {
-    padding: 14px 16px;
-  }
+    .toggle-btn[data-cat="Organisation"] {
+      border-color: #9b3060;
+      color: #9b3060;
+    }
 
-  .popup-country {
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 10px;
-    color: #1a1a1a;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #f0ede8;
-  }
+    .toggle-btn[data-cat="Organisation"] .dot {
+      background: #9b3060;
+    }
 
-  .popup-section {
-    margin-bottom: 10px;
-  }
+    .toggle-btn[data-cat="Organisation"].active {
+      background: #9b3060;
+      color: #fff;
+    }
 
-  .popup-section:last-child {
-    margin-bottom: 0;
-  }
+    .toggle-btn[data-cat="Organisation"].active .dot {
+      background: #fff;
+    }
 
-  .popup-label {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 5px;
-  }
+    #map {
+      height: calc(100vh - 130px);
+      width: 100%;
+      z-index: 1;
+    }
 
-  .popup-label.trial { color: #2563a8; }
-  .popup-label.framework { color: #2d7a3a; }
-  .popup-label.org { color: #9b3060; }
+    .leaflet-container {
+      background: #dde8f0;
+      font-family: inherit;
+    }
 
-  .popup-item {
-    font-size: 12.5px;
-    color: #444;
-    line-height: 1.45;
-    margin-bottom: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
+    .leaflet-popup-content-wrapper {
+      border-radius: 10px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.13);
+      padding: 0;
+      overflow: hidden;
+      max-width: 350px;
+      min-width: 300px;
+    }
 
-  .popup-item .item-title {
-    color: #222;
-  }
+    .leaflet-popup-content {
+      margin: 0;
+      width: auto !important;
+    }
 
-  .popup-item .item-desc {
-    color: #888;
-    font-size: 11.5px;
-  }
+    .leaflet-popup-tip {
+      background: #fff;
+    }
 
-  .popup-item a {
-    color: #2563a8;
-    text-decoration: none;
-    font-size: 11.5px;
-  }
+    .popup-inner {
+      padding: 14px 16px;
+    }
 
-  .popup-item a:hover {
-    text-decoration: underline;
-  }
+    .popup-country {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #1a1a1a;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f0ede8;
+    }
 
-  .popup-item img {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
-    border-radius: 4px;
-    margin-top: 2px;
-  }
+    .popup-section {
+      margin-bottom: 10px;
+    }
 
-  .popup-upcoming {
-    font-size: 10px;
-    color: #aaa;
-    font-style: italic;
-    margin-top: 2px;
-  }
+    .popup-section:last-child {
+      margin-bottom: 0;
+    }
 
-  .legend {
-    position: absolute;
-    bottom: 24px;
-    left: 12px;
-    z-index: 1000;
-    background: rgba(255,255,255,0.95);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 12px;
-    border: 1px solid #e8e4df;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  }
+    .popup-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 5px;
+    }
 
-  .legend-title {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #999;
-    margin-bottom: 7px;
-  }
+    .popup-label.trial {
+      color: #2563a8;
+    }
 
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-bottom: 5px;
-    color: #555;
-  }
+    .popup-label.framework {
+      color: #2d7a3a;
+    }
 
-  .legend-item:last-child { margin-bottom: 0; }
+    .popup-label.org {
+      color: #9b3060;
+    }
 
-  .legend-swatch {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-    flex-shrink: 0;
-  }
+    .popup-item {
+      font-size: 12.5px;
+      color: #444;
+      line-height: 1.45;
+      margin-bottom: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
 
-  .hint {
-    position: absolute;
-    bottom: 24px;
-    right: 12px;
-    z-index: 1000;
-    background: rgba(255,255,255,0.9);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 11px;
-    color: #999;
-    border: 1px solid #e8e4df;
-  }
+    .popup-item-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-  @media (max-width: 600px) {
-    header { padding: 14px 16px 10px; }
-    #controls { padding: 10px 16px; gap: 6px; }
-    .toggle-btn { padding: 6px 11px; font-size: 12px; }
-    #map { height: calc(100vh - 140px); }
-    .legend { bottom: 16px; left: 8px; }
-    .hint { display: none; }
-  }
-</style>
+    .popup-item .item-title {
+      color: #222;
+      flex: 1;
+    }
+
+    .popup-item .item-desc {
+      color: #888;
+      font-size: 11.5px;
+    }
+
+    .popup-item a {
+      color: #2563a8;
+      text-decoration: none;
+      font-size: 11.5px;
+    }
+
+    .popup-item a:hover {
+      text-decoration: underline;
+    }
+
+    .popup-item img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .popup-upcoming {
+      font-size: 10px;
+      color: #aaa;
+      font-style: italic;
+      margin-top: 2px;
+    }
+
+    .legend {
+      position: absolute;
+      bottom: 24px;
+      left: 12px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      border: 1px solid #e8e4df;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .legend-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #999;
+      margin-bottom: 7px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 5px;
+      color: #555;
+    }
+
+    .legend-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .hint {
+      position: absolute;
+      bottom: 24px;
+      right: 12px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 11px;
+      color: #999;
+      border: 1px solid #e8e4df;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        padding: 14px 16px 10px;
+      }
+
+      #controls {
+        padding: 10px 16px;
+        gap: 6px;
+      }
+
+      .toggle-btn {
+        padding: 6px 11px;
+        font-size: 12px;
+      }
+
+      #map {
+        height: calc(100vh - 140px);
+      }
+
+      .legend {
+        bottom: 16px;
+        left: 8px;
+      }
+
+      .hint {
+        display: none;
+      }
+
+      .leaflet-popup-content-wrapper {
+        max-width: 260px;
+        min-width: 220px;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<header>
-  <h1>PAREA European Psychedelic Research Map</h1>
-  <p>Clinical trials, access frameworks and organisations across Europe</p>
-</header>
+  <header>
+    <div style="display:flex; align-items:center; gap:14px; margin-bottom:4px;">
+      <img src="./images/parea-logo-wide.png" alt="PAREA" style="height:36px; width:auto; object-fit:contain;">
+    </div>
+    <p>Clinical trials, access frameworks and organisations across Europe</p>
+  </header>
 
-<div id="controls">
-  <span>Show:</span>
-  <button class="toggle-btn active" data-cat="Clinical Trial"><span class="dot"></span>Clinical trials</button>
-  <button class="toggle-btn active" data-cat="Access Framework"><span class="dot"></span>Access frameworks</button>
-  <button class="toggle-btn active" data-cat="Organisation"><span class="dot"></span>Organisations</button>
-</div>
+  <div id="controls">
+    <span>Show:</span>
+    <button class="toggle-btn active" data-cat="Clinical Trial"><span class="dot"></span>Clinical trials</button>
+    <button class="toggle-btn active" data-cat="Access Framework"><span class="dot"></span>Access frameworks</button>
+    <button class="toggle-btn active" data-cat="Organisation"><span class="dot"></span>Organisations</button>
+  </div>
 
-<div id="map"></div>
+  <div id="map"></div>
 
-<div class="legend">
-  <div class="legend-title">Colour key</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#2563a8"></div>Clinical trials</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#2d7a3a"></div>Access frameworks</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#9b3060"></div>Organisations</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#6b3fa0"></div>Multiple categories</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#d4d0ca"></div>No data yet</div>
-</div>
+  <div class="legend">
+    <div class="legend-title">Colour key</div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#2563a8"></div>Clinical trials
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#2d7a3a"></div>Access frameworks
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#9b3060"></div>Organisations
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#6b3fa0"></div>Multiple categories
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#d4d0ca"></div>No data yet
+    </div>
+  </div>
 
-<div class="hint">Click or tap a country to explore</div>
+  <div class="hint">Click or tap a country to explore</div>
 
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQA1Rp_7zPk_xtjVazNGZXU_oQLtgyTHYXKEm_9dnrcQRzmQ4WzXLhS-06MBXSU6ZDTgFDiK5Xh6dMg/pub?output=csv';
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQA1Rp_7zPk_xtjVazNGZXU_oQLtgyTHYXKEm_9dnrcQRzmQ4WzXLhS-06MBXSU6ZDTgFDiK5Xh6dMg/pub?output=csv';
 
-const GEOJSON_URL = './europe.json';
+    const GEOJSON_URL = './europe.json';
 
-const COUNTRY_ISO = {
-  'Austria': 'AUT', 'Belgium': 'BEL', 'Croatia': 'HRV', 'Czechia': 'CZE',
-  'Denmark': 'DNK', 'Estonia': 'EST', 'Finland': 'FIN', 'France': 'FRA',
-  'Germany': 'DEU', 'Greece': 'GRC', 'Hungary': 'HUN', 'Ireland': 'IRL',
-  'Iceland': 'ISL', 'Italy': 'ITA', 'Netherlands': 'NLD', 'Norway': 'NOR',
-  'Poland': 'POL', 'Portugal': 'PRT', 'Romania': 'ROU', 'Serbia': 'SRB',
-  'Spain': 'ESP', 'Sweden': 'SWE', 'Switzerland': 'CHE', 'Ukraine': 'UKR',
-  'UK': 'GBR'
-};
-
-const EUROPE_ISO = new Set(Object.values(COUNTRY_ISO));
-
-const active = { 'Clinical Trial': true, 'Access Framework': true, 'Organisation': true };
-let allData = {};
-let geoLayer = null;
-let map = null;
-
-const map_ = L.map('map', {
-  center: [54, 15],
-  zoom: 4,
-  minZoom: 3,
-  maxZoom: 8,
-  zoomControl: true
-});
-map = map_;
-
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  subdomains: 'abcd',
-  maxZoom: 19
-}).addTo(map_);
-
-function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-  return lines.slice(1).map(line => {
-    const cols = [];
-    let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') { inQ = !inQ; }
-      else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
-      else { cur += c; }
-    }
-    cols.push(cur.trim());
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = (cols[i] || '').replace(/^"|"$/g, '').trim(); });
-    return obj;
-  });
-}
-
-function buildCountryData(rows) {
-  const d = {};
-  rows.forEach(row => {
-    const country = row['Country'];
-    if (!country) return;
-    if (!d[country]) d[country] = { trials: [], frameworks: [], orgs: [], hasUpcoming: false };
-    const entry = {
-      title: row['Title'] || '',
-      description: row['Description'] || '',
-      url: row['URL'] || '',
-      image: row['Image'] || '',
-      status: row['Status'] || 'Active'
+    const COUNTRY_ISO = {
+      'Austria': 'AUT', 'Belgium': 'BEL', 'Croatia': 'HRV', 'Czechia': 'CZE',
+      'Denmark': 'DNK', 'Estonia': 'EST', 'Finland': 'FIN', 'France': 'FRA',
+      'Germany': 'DEU', 'Greece': 'GRC', 'Hungary': 'HUN', 'Ireland': 'IRL',
+      'Iceland': 'ISL', 'Italy': 'ITA', 'Netherlands': 'NLD', 'Norway': 'NOR',
+      'Poland': 'POL', 'Portugal': 'PRT', 'Romania': 'ROU', 'Serbia': 'SRB',
+      'Spain': 'ESP', 'Sweden': 'SWE', 'Switzerland': 'CHE', 'Ukraine': 'UKR',
+      'UK': 'GBR'
     };
-    if (row['Status'] === 'Upcoming') d[country].hasUpcoming = true;
-    const cat = row['Category'];
-    if (cat === 'Clinical Trial') d[country].trials.push(entry);
-    else if (cat === 'Access Framework') d[country].frameworks.push(entry);
-    else if (cat === 'Organisation') d[country].orgs.push(entry);
-  });
-  return d;
-}
 
-function hasVisible(countryData) {
-  return (active['Clinical Trial'] && countryData.trials.length > 0) ||
-         (active['Access Framework'] && countryData.frameworks.length > 0) ||
-         (active['Organisation'] && countryData.orgs.length > 0);
-}
+    const EUROPE_ISO = new Set(Object.values(COUNTRY_ISO));
 
-function getColor(countryData) {
-  const t = active['Clinical Trial'] && countryData.trials.length > 0;
-  const f = active['Access Framework'] && countryData.frameworks.length > 0;
-  const o = active['Organisation'] && countryData.orgs.length > 0;
-  const count = [t, f, o].filter(Boolean).length;
-  if (count > 1) return '#6b3fa0';
-  if (t) return '#2563a8';
-  if (f) return '#2d7a3a';
-  if (o) return '#9b3060';
-  return null;
-}
+    const active = { 'Clinical Trial': true, 'Access Framework': true, 'Organisation': true };
+    let allData = {};
+    let geoLayer = null;
+    let map = null;
 
-function buildPopup(country, cd) {
-  let html = '<div class="popup-inner">';
-  html += '<div class="popup-country">' + country + '</div>';
-
-  if (active['Clinical Trial'] && cd.trials.length > 0) {
-    html += '<div class="popup-section"><div class="popup-label trial">Clinical trials</div>';
-    cd.trials.forEach(e => {
-      html += '<div class="popup-item">';
-      if (e.title) html += '<span class="item-title">' + e.title + '</span>';
-      if (e.description) html += '<span class="item-desc">' + e.description + '</span>';
-      if (e.url) html += '<a href="' + e.url + '" target="_blank" rel="noopener">More information &#8599;</a>';
-      if (e.status === 'Upcoming') html += '<span class="popup-upcoming">Upcoming</span>';
-      html += '</div>';
+    const map_ = L.map('map', {
+      center: [54, 15],
+      zoom: 4,
+      minZoom: 3,
+      maxZoom: 8,
+      zoomControl: true
     });
-    html += '</div>';
-  }
+    map = map_;
 
-  if (active['Access Framework'] && cd.frameworks.length > 0) {
-    html += '<div class="popup-section"><div class="popup-label framework">Access frameworks</div>';
-    cd.frameworks.forEach(e => {
-      html += '<div class="popup-item">';
-      if (e.title) html += '<span class="item-title">' + e.title + '</span>';
-      else if (e.url) html += '<a href="' + e.url + '" target="_blank" rel="noopener">View framework &#8599;</a>';
-      if (e.description) html += '<span class="item-desc">' + e.description + '</span>';
-      if (e.title && e.url) html += '<a href="' + e.url + '" target="_blank" rel="noopener">More information &#8599;</a>';
-      html += '</div>';
-    });
-    html += '</div>';
-  }
-
-  if (active['Organisation'] && cd.orgs.length > 0) {
-    html += '<div class="popup-section"><div class="popup-label org">Organisations</div>';
-    cd.orgs.forEach(e => {
-      html += '<div class="popup-item">';
-      if (e.image) html += '<img src="' + e.image + '" alt="" onerror="this.style.display=\'none\'">';
-      if (e.title) html += '<span class="item-title">' + e.title + '</span>';
-      if (e.description) html += '<span class="item-desc">' + e.description + '</span>';
-      if (e.url) html += '<a href="' + e.url + '" target="_blank" rel="noopener">Visit website &#8599;</a>';
-      if (e.status === 'Upcoming') html += '<span class="popup-upcoming">Upcoming</span>';
-      html += '</div>';
-    });
-    html += '</div>';
-  }
-
-  html += '</div>';
-  return html;
-}
-
-function styleFeature(feature) {
-  const iso = feature.properties.ISO_A3;
-  const name = Object.keys(COUNTRY_ISO).find(k => COUNTRY_ISO[k] === iso);
-  const cd = name ? allData[name] : null;
-
-  if (!EUROPE_ISO.has(iso)) {
-    return { fillColor: '#e8e4df', fillOpacity: 0, weight: 0, color: 'transparent' };
-  }
-
-  if (!cd || !hasVisible(cd)) {
-    return {
-      fillColor: '#d4d0ca',
-      fillOpacity: 0.7,
-      weight: 1,
-      color: '#fff',
-      opacity: 1
-    };
-  }
-
-  return {
-    fillColor: getColor(cd),
-    fillOpacity: 0.75,
-    weight: 1.5,
-    color: '#fff',
-    opacity: 1
-  };
-}
-
-function onEachFeature(feature, layer) {
-  const iso = feature.properties.ISO_A3;
-  if (!EUROPE_ISO.has(iso)) return;
-
-  const name = Object.keys(COUNTRY_ISO).find(k => COUNTRY_ISO[k] === iso);
-  const cd = name ? allData[name] : null;
-
-  layer.on({
-    mouseover: function(e) {
-      if (!cd || !hasVisible(cd)) return;
-      this.setStyle({ fillOpacity: 0.95, weight: 2 });
-    },
-    mouseout: function(e) {
-      if (geoLayer) geoLayer.resetStyle(this);
-    },
-    click: function(e) {
-      if (!cd || !hasVisible(cd)) return;
-      L.popup({ maxWidth: 320, className: 'parea-popup' })
-        .setLatLng(e.latlng)
-        .setContent(buildPopup(name, cd))
-        .openOn(map_);
-    }
-  });
-}
-
-function refreshMap() {
-  if (geoLayer) geoLayer.setStyle(styleFeature);
-}
-
-document.querySelectorAll('.toggle-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    const cat = this.dataset.cat;
-    active[cat] = !active[cat];
-    this.classList.toggle('active', active[cat]);
-    refreshMap();
-  });
-});
-
-async function loadData() {
-  try {
-    const csvRes = await fetch(CSV_URL);
-    const csvText = await csvRes.text();
-    const rows = parseCSV(csvText);
-    allData = buildCountryData(rows);
-  } catch (e) {
-    console.warn('Could not load live data, map will show geography only.', e);
-  }
-
-  try {
-    const geoRes = await fetch(GEOJSON_URL);
-    const geoData = await geoRes.json();
-    geoLayer = L.geoJSON(geoData, {
-      style: styleFeature,
-      onEachFeature: onEachFeature,
-      filter: function(feature) {
-        return EUROPE_ISO.has(feature.properties.ISO_A3);
-      }
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
     }).addTo(map_);
-    map_.fitBounds(geoLayer.getBounds(), { padding: [20, 20] });
-  } catch (e) {
-    console.error('Could not load map geography.', e);
-  }
-}
 
-loadData();
-</script>
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      return lines.slice(1).map(line => {
+        const cols = [];
+        let cur = '', inQ = false;
+        for (let i = 0; i < line.length; i++) {
+          const c = line[i];
+          if (c === '"') { inQ = !inQ; }
+          else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+          else { cur += c; }
+        }
+        cols.push(cur.trim());
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = (cols[i] || '').replace(/^"|"$/g, '').trim(); });
+        return obj;
+      });
+    }
+
+    function buildCountryData(rows) {
+      const d = {};
+      rows.forEach(row => {
+        const country = row['Country'];
+        if (!country) return;
+        if (!d[country]) d[country] = { trials: [], frameworks: [], orgs: [], hasUpcoming: false };
+        const entry = {
+          title: row['Title'] || '',
+          description: row['Description'] || '',
+          url: row['URL'] || '',
+          image: row['Image'] || '',
+          status: row['Status'] || 'Active'
+        };
+        if (row['Status'] === 'Upcoming') d[country].hasUpcoming = true;
+        const cat = row['Category'];
+        if (cat === 'Clinical Trial') d[country].trials.push(entry);
+        else if (cat === 'Access Framework') d[country].frameworks.push(entry);
+        else if (cat === 'Organisation') d[country].orgs.push(entry);
+      });
+      return d;
+    }
+
+    function hasVisible(countryData) {
+      return (active['Clinical Trial'] && countryData.trials.length > 0) ||
+        (active['Access Framework'] && countryData.frameworks.length > 0) ||
+        (active['Organisation'] && countryData.orgs.length > 0);
+    }
+
+    function getColor(countryData) {
+      const t = active['Clinical Trial'] && countryData.trials.length > 0;
+      const f = active['Access Framework'] && countryData.frameworks.length > 0;
+      const o = active['Organisation'] && countryData.orgs.length > 0;
+      const count = [t, f, o].filter(Boolean).length;
+      if (count > 1) return '#6b3fa0';
+      if (t) return '#2563a8';
+      if (f) return '#2d7a3a';
+      if (o) return '#9b3060';
+      return null;
+    }
+
+    function buildPopup(country, cd) {
+      let html = '<div class="popup-inner">';
+      html += '<div class="popup-country">' + country + '</div>';
+
+      if (active['Clinical Trial'] && cd.trials.length > 0) {
+        html += '<div class="popup-section"><div class="popup-label trial">Clinical trials</div>';
+        cd.trials.forEach(e => {
+          html += '<div class="popup-item">';
+          if (e.title) html += '<span class="item-title">' + e.title + '</span>';
+          if (e.description) html += '<span class="item-desc">' + e.description + '</span>';
+          if (e.url) html += '<a href="' + e.url + '" target="_blank" rel="noopener">More information &#8599;</a>';
+          if (e.status === 'Upcoming') html += '<span class="popup-upcoming">Upcoming</span>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      if (active['Access Framework'] && cd.frameworks.length > 0) {
+        html += '<div class="popup-section"><div class="popup-label framework">Access frameworks</div>';
+        cd.frameworks.forEach(e => {
+          html += '<div class="popup-item">';
+          if (e.title) html += '<span class="item-title">' + e.title + '</span>';
+          else if (e.url) html += '<a href="' + e.url + '" target="_blank" rel="noopener">View framework &#8599;</a>';
+          if (e.description) html += '<span class="item-desc">' + e.description + '</span>';
+          if (e.title && e.url) html += '<a href="' + e.url + '" target="_blank" rel="noopener">More information &#8599;</a>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      if (active['Organisation'] && cd.orgs.length > 0) {
+        html += '<div class="popup-section"><div class="popup-label org">Organisations</div>';
+        cd.orgs.forEach(e => {
+          html += '<div class="popup-item">';
+          html += '<div class="popup-item-header">';
+          if (e.image) html += '<img src="' + e.image + '" alt="" onerror="this.style.display=\'none\'">';
+          if (e.title) html += '<span class="item-title">' + e.title + '</span>';
+          html += '</div>';
+          if (e.description) html += '<span class="item-desc">' + e.description + '</span>';
+          if (e.url) html += '<a href="' + e.url + '" target="_blank" rel="noopener">Visit website &#8599;</a>';
+          if (e.status === 'Upcoming') html += '<span class="popup-upcoming">Upcoming</span>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    function styleFeature(feature) {
+      const iso = feature.properties.ISO_A3;
+      const name = Object.keys(COUNTRY_ISO).find(k => COUNTRY_ISO[k] === iso);
+      const cd = name ? allData[name] : null;
+
+      if (!EUROPE_ISO.has(iso)) {
+        return { fillColor: '#e8e4df', fillOpacity: 0, weight: 0, color: 'transparent' };
+      }
+
+      if (!cd || !hasVisible(cd)) {
+        return {
+          fillColor: '#d4d0ca',
+          fillOpacity: 0.7,
+          weight: 1,
+          color: '#fff',
+          opacity: 1
+        };
+      }
+
+      return {
+        fillColor: getColor(cd),
+        fillOpacity: 0.75,
+        weight: 1.5,
+        color: '#fff',
+        opacity: 1
+      };
+    }
+
+    function onEachFeature(feature, layer) {
+      const iso = feature.properties.ISO_A3;
+      if (!EUROPE_ISO.has(iso)) return;
+
+      const name = Object.keys(COUNTRY_ISO).find(k => COUNTRY_ISO[k] === iso);
+      const cd = name ? allData[name] : null;
+
+      layer.on({
+        mouseover: function (e) {
+          if (!cd || !hasVisible(cd)) return;
+          this.setStyle({ fillOpacity: 0.95, weight: 2 });
+        },
+        mouseout: function (e) {
+          if (geoLayer) geoLayer.resetStyle(this);
+        },
+        click: function (e) {
+          if (!cd || !hasVisible(cd)) return;
+          L.popup({ maxWidth: 320, className: 'parea-popup' })
+            .setLatLng(e.latlng)
+            .setContent(buildPopup(name, cd))
+            .openOn(map_);
+        }
+      });
+    }
+
+    function refreshMap() {
+      if (geoLayer) geoLayer.setStyle(styleFeature);
+    }
+
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const cat = this.dataset.cat;
+        active[cat] = !active[cat];
+        this.classList.toggle('active', active[cat]);
+        refreshMap();
+      });
+    });
+
+    async function loadData() {
+      try {
+        const csvRes = await fetch(CSV_URL);
+        const csvText = await csvRes.text();
+        const rows = parseCSV(csvText);
+        allData = buildCountryData(rows);
+      } catch (e) {
+        console.warn('Could not load live data, map will show geography only.', e);
+      }
+
+      try {
+        const geoRes = await fetch(GEOJSON_URL);
+        const geoData = await geoRes.json();
+        geoLayer = L.geoJSON(geoData, {
+          style: styleFeature,
+          onEachFeature: onEachFeature,
+          filter: function (feature) {
+            return EUROPE_ISO.has(feature.properties.ISO_A3);
+          }
+        }).addTo(map_);
+        map_.fitBounds(geoLayer.getBounds(), { padding: [20, 20] });
+      } catch (e) {
+        console.error('Could not load map geography.', e);
+      }
+    }
+
+    loadData();
+  </script>
 </body>
+
 </html>
