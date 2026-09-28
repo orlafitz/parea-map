@@ -66,13 +66,48 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
-    .box-title {
+    .box-body { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
+    #controls.collapsed { padding: 6px 10px; }
+    #controls.collapsed .box-body { display: none; }
+
+    /* Header row: doubles as the collapse / expand button */
+    .box-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 2px 0;
+      cursor: pointer;
+      font-family: inherit;
       font-size: 10px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #999;
+      color: #888;
     }
+
+    .box-toggle:hover { color: #2e1650; }
+    .box-toggle .label { flex: 1; text-align: left; }
+
+    /* Small dots showing which filters are on, visible only when collapsed */
+    .box-toggle .dots { display: none; gap: 4px; }
+    #controls.collapsed .box-toggle .dots { display: flex; }
+    .box-toggle .dots i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+    .box-toggle .dots i.off { opacity: 0.2; }
+
+    .box-toggle .chev {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #f3f1ee;
+      display: grid;
+      place-items: center;
+      transition: transform 0.2s ease;
+    }
+
+    #controls.collapsed .box-toggle .chev { transform: rotate(180deg); }
 
     .mini-key {
       display: flex;
@@ -245,6 +280,9 @@
       margin-top: 3px;
     }
 
+    .logo-link { flex-shrink: 0; align-self: flex-start; border-radius: 4px; transition: opacity 0.15s; }
+    .logo-link:hover { opacity: 0.75; }
+
     .item img {
       width: 38px;
       height: 38px;
@@ -317,13 +355,23 @@
     <div id="map"></div>
 
     <div id="controls" role="group" aria-label="Filter the map">
-      <div class="box-title">Show</div>
+      <button class="box-toggle" type="button" aria-expanded="true" aria-controls="box-body" title="Hide filters">
+        <span class="label">Filters</span>
+        <span class="dots" aria-hidden="true">
+          <i data-cat="Clinical Trial" style="background:var(--trial)"></i>
+          <i data-cat="Access Framework" style="background:var(--framework)"></i>
+          <i data-cat="Organisation" style="background:var(--org)"></i>
+        </span>
+        <span class="chev" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5l3 3 3-3" fill="none" stroke="#555" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </button>
+      <div class="box-body" id="box-body">
       <button class="toggle-btn active" data-cat="Clinical Trial" aria-pressed="true"><span class="dot"></span>Clinical trials</button>
       <button class="toggle-btn active" data-cat="Access Framework" aria-pressed="true"><span class="dot"></span>Access frameworks</button>
       <button class="toggle-btn active" data-cat="Organisation" aria-pressed="true"><span class="dot"></span>Organisations</button>
       <div class="mini-key">
         <span><i style="background:var(--data)"></i>Data</span>
         <span><i style="background:var(--nodata)"></i>No data yet</span>
+      </div>
       </div>
     </div>
 
@@ -447,6 +495,7 @@
           description: row['Description'] || '',
           url: row['URL'] || '',
           image: pickLogo(row, cat.key),
+          logoLink: pickLogoLink(row, cat.key),
           status: normaliseStatus(row['Status'])
         });
       });
@@ -482,6 +531,13 @@
       try {
         return new URL(/^https?:\/\//i.test(u) ? u : 'https://' + u).hostname.replace(/^www\./, '');
       } catch (e) { return ''; }
+    }
+
+    // Where clicking the logo goes: the sponsor's website, or for organisations their own URL
+    function pickLogoLink(row, catKey) {
+      const site = (row['Sponsor website'] || row['Sponsor Website'] || row['Logo website'] || '').trim();
+      if (site) return /^https?:\/\//i.test(site) ? site : 'https://' + site;
+      return catKey === 'Organisation' ? (row['URL'] || '') : '';
     }
 
     function pickLogo(row, catKey) {
@@ -531,7 +587,15 @@
         html += '<span class="badge ' + e.status + '">' + STATUS_LABEL[e.status] + '</span>';
       }
       html += '</div>';
-      if (img) html += '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.remove()" onload="if (this.naturalWidth < 24) this.remove()">';
+      if (img) {
+        // If the logo fails to load, remove it (and its link) entirely
+        const drop = "(this.closest('.logo-link') || this).remove()";
+        const imgTag = '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="' + drop + '" onload="if (this.naturalWidth < 24) ' + drop + '">';
+        const link = /^https?:\/\//i.test(e.logoLink) ? e.logoLink : '';
+        html += link
+          ? '<a class="logo-link" href="' + esc(link) + '" target="_blank" rel="noopener" title="Visit sponsor website" aria-label="Visit sponsor website">' + imgTag + '</a>'
+          : imgTag;
+      }
       html += '</div>';
       return html;
     }
@@ -595,6 +659,19 @@
     // Stop scrolling/clicks in the panel from moving the map
     L.DomEvent.disableScrollPropagation(panel);
     L.DomEvent.disableClickPropagation(document.getElementById('controls'));
+
+    // Collapse / expand the filter box (open on load)
+    const controls = document.getElementById('controls');
+    const boxToggle = controls.querySelector('.box-toggle');
+    boxToggle.addEventListener('click', () => {
+      const collapsed = controls.classList.toggle('collapsed');
+      boxToggle.setAttribute('aria-expanded', !collapsed);
+      boxToggle.title = collapsed ? 'Show filters' : 'Hide filters';
+    });
+
+    function syncFilterDots() {
+      controls.querySelectorAll('.dots i').forEach(d => d.classList.toggle('off', !active[d.dataset.cat]));
+    }
     L.DomEvent.disableClickPropagation(panel);
 
     // ---------- Map styling ----------
@@ -652,6 +729,7 @@
         active[cat] = !active[cat];
         this.classList.toggle('active', active[cat]);
         this.setAttribute('aria-pressed', active[cat]);
+        syncFilterDots();
         refreshMap();
         if (openIso) openPanel(openIso); // re-render or close if nothing left
       });
