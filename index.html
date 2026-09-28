@@ -446,7 +446,7 @@
           title: row['Title'] || '',
           description: row['Description'] || '',
           url: row['URL'] || '',
-          image: row['Image'] || '',
+          image: pickLogo(row, cat.key),
           status: normaliseStatus(row['Status'])
         });
       });
@@ -467,6 +467,29 @@
 
     function esc(s) {
       return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    // ---------- Logos ----------
+    // Order of preference:
+    //   1. Image column (a ./images/... file or any full image URL) always wins
+    //   2. Sponsor website column: the logo is fetched automatically from that site
+    //   3. Organisations only: the logo is fetched from the organisation's own URL
+    const USE_ORG_URL_FOR_LOGO = true;
+    const LOGO_SERVICE = domain => 'https://www.google.com/s2/favicons?sz=128&domain=' + encodeURIComponent(domain);
+
+    function domainOf(u) {
+      if (!u) return '';
+      try {
+        return new URL(/^https?:\/\//i.test(u) ? u : 'https://' + u).hostname.replace(/^www\./, '');
+      } catch (e) { return ''; }
+    }
+
+    function pickLogo(row, catKey) {
+      if (row['Image']) return row['Image'];
+      const site = row['Sponsor website'] || row['Sponsor Website'] || row['Logo website'] || '';
+      let domain = domainOf(site);
+      if (!domain && USE_ORG_URL_FOR_LOGO && catKey === 'Organisation') domain = domainOf(row['URL']);
+      return domain ? LOGO_SERVICE(domain) : '';
     }
 
     function safeUrl(u) {
@@ -508,7 +531,7 @@
         html += '<span class="badge ' + e.status + '">' + STATUS_LABEL[e.status] + '</span>';
       }
       html += '</div>';
-      if (img) html += '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.remove()">';
+      if (img) html += '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.remove()" onload="if (this.naturalWidth < 24) this.remove()">';
       html += '</div>';
       return html;
     }
