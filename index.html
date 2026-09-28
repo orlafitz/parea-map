@@ -7,37 +7,40 @@
   <title>PAREA European Psychedelic Research Map</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    :root {
+      --trial: #2563a8;
+      --framework: #2d7a3a;
+      --org: #9b3060;
+      --data: #6b3fa0;
+      --nodata: #d4d0ca;
+      --land: #ebe8e3;
+      --sea: #f4f6f8;
+      --line: #e8e4df;
+      --muted: #777;
     }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
 
     body {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: #f8f7f4;
       color: #1a1a1a;
-      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
     }
 
     header {
       padding: 18px 24px 14px;
       background: #fff;
-      border-bottom: 1px solid #e8e4df;
+      border-bottom: 1px solid var(--line);
     }
 
-    header h1 {
-      font-size: 17px;
-      font-weight: 600;
-      color: #1a1a1a;
-      letter-spacing: -0.01em;
-    }
-
-    header p {
-      font-size: 13px;
-      color: #888;
-      margin-top: 3px;
-    }
+    header p { font-size: 13px; color: #888; margin-top: 3px; }
 
     #controls {
       display: flex;
@@ -45,15 +48,11 @@
       flex-wrap: wrap;
       padding: 12px 24px;
       background: #fff;
-      border-bottom: 1px solid #e8e4df;
+      border-bottom: 1px solid var(--line);
       align-items: center;
     }
 
-    #controls span {
-      font-size: 12px;
-      color: #999;
-      margin-right: 4px;
-    }
+    #controls > span { font-size: 12px; color: #999; margin-right: 4px; }
 
     .toggle-btn {
       display: flex;
@@ -61,7 +60,8 @@
       gap: 7px;
       padding: 7px 14px;
       border-radius: 20px;
-      border: 1.5px solid;
+      border: 1.5px solid var(--c);
+      color: var(--c);
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
@@ -70,197 +70,163 @@
       font-family: inherit;
     }
 
-    .toggle-btn .dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      transition: background 0.15s;
-    }
+    .toggle-btn .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+    .toggle-btn.active { background: var(--c); color: #fff; }
+    .toggle-btn.active .dot { background: #fff; }
+    .toggle-btn[data-cat="Clinical Trial"] { --c: var(--trial); }
+    .toggle-btn[data-cat="Access Framework"] { --c: var(--framework); }
+    .toggle-btn[data-cat="Organisation"] { --c: var(--org); }
 
-    .toggle-btn[data-cat="Clinical Trial"] {
-      border-color: #2563a8;
-      color: #2563a8;
-    }
+    #stage { position: relative; flex: 1; min-height: 0; }
 
-    .toggle-btn[data-cat="Clinical Trial"] .dot {
-      background: #2563a8;
-    }
+    #map { position: absolute; inset: 0; z-index: 1; }
 
-    .toggle-btn[data-cat="Clinical Trial"].active {
-      background: #2563a8;
-      color: #fff;
-    }
+    .leaflet-container { background: var(--sea); font-family: inherit; }
 
-    .toggle-btn[data-cat="Clinical Trial"].active .dot {
+    /* Hover summary tooltip */
+    .leaflet-tooltip.country-tip {
       background: #fff;
-    }
-
-    .toggle-btn[data-cat="Access Framework"] {
-      border-color: #2d7a3a;
-      color: #2d7a3a;
-    }
-
-    .toggle-btn[data-cat="Access Framework"] .dot {
-      background: #2d7a3a;
-    }
-
-    .toggle-btn[data-cat="Access Framework"].active {
-      background: #2d7a3a;
-      color: #fff;
-    }
-
-    .toggle-btn[data-cat="Access Framework"].active .dot {
-      background: #fff;
-    }
-
-    .toggle-btn[data-cat="Organisation"] {
-      border-color: #9b3060;
-      color: #9b3060;
-    }
-
-    .toggle-btn[data-cat="Organisation"] .dot {
-      background: #9b3060;
-    }
-
-    .toggle-btn[data-cat="Organisation"].active {
-      background: #9b3060;
-      color: #fff;
-    }
-
-    .toggle-btn[data-cat="Organisation"].active .dot {
-      background: #fff;
-    }
-
-    #map {
-      height: calc(100vh - 130px);
-      width: 100%;
-      z-index: 1;
-    }
-
-    .leaflet-container {
-      background: #dde8f0;
-      font-family: inherit;
-    }
-
-    .leaflet-popup-content-wrapper {
-      border-radius: 10px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.13);
-      padding: 0;
-      overflow: hidden;
-      max-width: 350px;
-      min-width: 300px;
-    }
-
-    .leaflet-popup-content {
-      margin: 0;
-      width: auto !important;
-    }
-
-    .leaflet-popup-tip {
-      background: #fff;
-    }
-
-    .popup-inner {
-      padding: 14px 16px;
-    }
-
-    .popup-country {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 10px;
-      color: #1a1a1a;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #f0ede8;
-    }
-
-    .popup-section {
-      margin-bottom: 10px;
-    }
-
-    .popup-section:last-child {
-      margin-bottom: 0;
-    }
-
-    .popup-label {
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 5px;
-      color: #ffffff;
-      padding: 7px;
-    }
-
-    .popup-label.trial {
-      background: #2563a8;
-    }
-
-    .popup-label.framework {
-      background: #2d7a3a;
-    }
-
-    .popup-label.org {
-      background: #9b3060;
-    }
-
-    .popup-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      padding: 9px 12px;
       font-size: 12.5px;
-      color: #444;
-      line-height: 1.45;
-      margin-bottom: 6px;
+      color: #333;
+      min-width: 160px;
+    }
+
+    .leaflet-tooltip.country-tip::before { display: none; }
+    .tip-name { font-weight: 600; font-size: 13.5px; margin-bottom: 5px; }
+    .tip-row { display: flex; align-items: center; gap: 7px; margin-top: 3px; }
+    .tip-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .tip-cta { margin-top: 7px; font-size: 11px; color: #999; }
+    .tip-empty { color: #999; }
+
+    /* Details side panel */
+    #panel {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      bottom: 12px;
+      width: 380px;
+      max-width: calc(100% - 24px);
+      z-index: 1100;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.16);
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      transform: translateX(calc(100% + 24px));
+      transition: transform 0.25s ease;
     }
 
-    .popup-item-header {
+    #panel.open { transform: translateX(0); }
+
+    .panel-head {
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex-direction: row-reverse;
       justify-content: space-between;
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid #f0ede8;
+      flex-shrink: 0;
     }
 
-    .popup-item .item-title {
-      color: #222;
+    .panel-head h2 { font-size: 18px; font-weight: 600; }
+
+    .panel-close {
+      border: none;
+      background: #f3f1ee;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      color: #555;
+    }
+
+    .panel-close:hover { background: #e8e4df; }
+
+    .panel-body {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 12px 18px 20px;
       flex: 1;
     }
 
-    .popup-item .item-title::before {
-      content: "→ ";
-      color: #999;
+    .section { margin-bottom: 18px; }
+    .section:last-child { margin-bottom: 0; }
+
+    .section-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #fff;
+      padding: 7px 10px;
+      border-radius: 5px;
+      margin-bottom: 4px;
     }
 
-    .popup-item .item-desc {
-      color: #888;
+    .section-label.trial { background: var(--trial); }
+    .section-label.framework { background: var(--framework); }
+    .section-label.org { background: var(--org); }
+
+    .item {
+      display: flex;
+      gap: 10px;
+      padding: 10px 2px;
+      border-bottom: 1px solid #f3f1ee;
+    }
+
+    .item:last-child { border-bottom: none; }
+    .item.expired { opacity: 0.55; }
+    .item-main { flex: 1; min-width: 0; }
+
+    .item-title {
+      font-size: 13.5px;
+      line-height: 1.4;
+      color: #1a1a1a;
+      font-weight: 500;
+    }
+
+    a.item-title { text-decoration: none; }
+    a.item-title:hover { color: var(--trial); text-decoration: underline; }
+    a.item-title .ext { color: #999; font-size: 11px; margin-left: 2px; }
+
+    .item-desc {
       font-size: 11.5px;
+      line-height: 1.45;
+      color: var(--muted);
+      margin-top: 3px;
     }
 
-    .popup-item a {
-      color: #2563a8;
-      text-decoration: none;
-      font-size: 11.5px;
-    }
-
-    .popup-item a:hover {
-      text-decoration: underline;
-    }
-
-    .popup-item img {
-      width: 32px;
-      height: 32px;
+    .item img {
+      width: 38px;
+      height: 38px;
       object-fit: contain;
       border-radius: 4px;
       flex-shrink: 0;
+      background: #fff;
     }
 
-    .popup-upcoming {
+    .badge {
+      display: inline-block;
       font-size: 10px;
-      color: #aaa;
-      font-style: italic;
-      margin-top: 2px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      padding: 2px 7px;
+      border-radius: 10px;
+      margin-top: 5px;
+      border: 1px solid;
     }
+
+    .badge.active { color: #1f6f5c; border-color: #9fd3c3; background: #eef8f4; }
+    .badge.upcoming { color: #8a5a00; border-color: #efcf8a; background: #fff7e6; }
+    .badge.expired { color: #666; border-color: #d6d3ce; background: #f3f1ee; }
 
     .legend {
       position: absolute;
@@ -271,7 +237,7 @@
       border-radius: 8px;
       padding: 10px 14px;
       font-size: 12px;
-      border: 1px solid #e8e4df;
+      border: 1px solid var(--line);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
@@ -284,24 +250,9 @@
       margin-bottom: 7px;
     }
 
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      margin-bottom: 5px;
-      color: #555;
-    }
-
-    .legend-item:last-child {
-      margin-bottom: 0;
-    }
-
-    .legend-swatch {
-      width: 14px;
-      height: 14px;
-      border-radius: 3px;
-      flex-shrink: 0;
-    }
+    .legend-item { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; color: #555; }
+    .legend-item:last-child { margin-bottom: 0; }
+    .legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
 
     .hint {
       position: absolute;
@@ -313,41 +264,30 @@
       padding: 8px 12px;
       font-size: 11px;
       color: #999;
-      border: 1px solid #e8e4df;
+      border: 1px solid var(--line);
     }
 
     @media (max-width: 600px) {
-      header {
-        padding: 14px 16px 10px;
+      header { padding: 14px 16px 10px; }
+      #controls { padding: 10px 16px; gap: 6px; }
+      .toggle-btn { padding: 6px 11px; font-size: 12px; }
+      .legend { bottom: 16px; left: 8px; }
+      .hint { display: none; }
+
+      /* Bottom sheet on mobile */
+      #panel {
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-width: 100%;
+        max-height: 70%;
+        border-radius: 14px 14px 0 0;
+        transform: translateY(105%);
       }
 
-      #controls {
-        padding: 10px 16px;
-        gap: 6px;
-      }
-
-      .toggle-btn {
-        padding: 6px 11px;
-        font-size: 12px;
-      }
-
-      #map {
-        height: calc(100vh - 140px);
-      }
-
-      .legend {
-        bottom: 16px;
-        left: 8px;
-      }
-
-      .hint {
-        display: none;
-      }
-
-      .leaflet-popup-content-wrapper {
-        max-width: 260px;
-        min-width: 220px;
-      }
+      #panel.open { transform: translateY(0); }
     }
   </style>
 </head>
@@ -363,236 +303,279 @@
 
   <div id="controls">
     <span>Show:</span>
-    <button class="toggle-btn active" data-cat="Clinical Trial"><span class="dot"></span>Clinical trials</button>
-    <button class="toggle-btn active" data-cat="Access Framework"><span class="dot"></span>Access frameworks</button>
-    <button class="toggle-btn active" data-cat="Organisation"><span class="dot"></span>Organisations</button>
+    <button class="toggle-btn active" data-cat="Clinical Trial" aria-pressed="true"><span class="dot"></span>Clinical trials</button>
+    <button class="toggle-btn active" data-cat="Access Framework" aria-pressed="true"><span class="dot"></span>Access frameworks</button>
+    <button class="toggle-btn active" data-cat="Organisation" aria-pressed="true"><span class="dot"></span>Organisations</button>
   </div>
 
-  <div id="map"></div>
+  <div id="stage">
+    <div id="map"></div>
 
-  <div class="legend">
-    <div class="legend-title">Colour key</div>
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:#2563a8"></div>Clinical trials
+    <div class="legend">
+      <div class="legend-title">Key</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--data)"></div>Data available</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--nodata)"></div>No data yet</div>
     </div>
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:#2d7a3a"></div>Access frameworks
-    </div>
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:#9b3060"></div>Organisations
-    </div>
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:#6b3fa0"></div>Multiple categories
-    </div>
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:#d4d0ca"></div>No data yet
-    </div>
+
+    <div class="hint">Hover for a summary, click for details</div>
+
+    <aside id="panel" aria-hidden="true" aria-labelledby="panel-title">
+      <div class="panel-head">
+        <h2 id="panel-title"></h2>
+        <button class="panel-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="panel-body" id="panel-body"></div>
+    </aside>
   </div>
-
-  <div class="hint">Click or tap a country to explore</div>
 
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQA1Rp_7zPk_xtjVazNGZXU_oQLtgyTHYXKEm_9dnrcQRzmQ4WzXLhS-06MBXSU6ZDTgFDiK5Xh6dMg/pub?output=csv';
-
     const GEOJSON_URL = './europe.json';
 
+    const COLOURS = { data: '#6b3fa0', nodata: '#d4d0ca', land: '#ebe8e3' };
+
+    // Country names as written in the Google Sheet -> ISO code in europe.json
     const COUNTRY_ISO = {
       'Albania': 'ALB', 'Andorra': 'AND', 'Austria': 'AUT', 'Belarus': 'BLR',
       'Belgium': 'BEL', 'Bosnia and Herzegovina': 'BIH', 'Bulgaria': 'BGR',
-      'Croatia': 'HRV', 'Cyprus': 'CYP', 'Czechia': 'CZE', 'Denmark': 'DNK',
-      'Estonia': 'EST', 'Finland': 'FIN', 'France': 'FRA', 'Germany': 'DEU',
-      'Greece': 'GRC', 'Hungary': 'HUN', 'Iceland': 'ISL', 'Ireland': 'IRL',
-      'Italy': 'ITA', 'Kosovo': 'XKX', 'Latvia': 'LVA', 'Liechtenstein': 'LIE',
-      'Lithuania': 'LTU', 'Luxembourg': 'LUX', 'Malta': 'MLT',
-      'Moldova': 'MDA', 'Monaco': 'MCO', 'Montenegro': 'MNE',
-      'Netherlands': 'NLD', 'North Macedonia': 'MKD', 'Norway': 'NOR',
-      'Poland': 'POL', 'Portugal': 'PRT', 'Romania': 'ROU', 'Russia': 'RUS',
-      'San Marino': 'SMR', 'Serbia': 'SRB', 'Slovakia': 'SVK',
-      'Slovenia': 'SVN', 'Spain': 'ESP', 'Sweden': 'SWE', 'Switzerland': 'CHE',
-      'Turkey': 'TUR', 'Ukraine': 'UKR', 'UK': 'GBR', 'Vatican': 'VAT'
+      'Croatia': 'HRV', 'Cyprus': 'CYP', 'Czechia': 'CZE', 'Czech Republic': 'CZE',
+      'Denmark': 'DNK', 'Estonia': 'EST', 'Finland': 'FIN', 'France': 'FRA',
+      'Germany': 'DEU', 'Greece': 'GRC', 'Hungary': 'HUN', 'Iceland': 'ISL',
+      'Ireland': 'IRL', 'Italy': 'ITA', 'Kosovo': 'XKX', 'Latvia': 'LVA',
+      'Liechtenstein': 'LIE', 'Lithuania': 'LTU', 'Luxembourg': 'LUX', 'Malta': 'MLT',
+      'Moldova': 'MDA', 'Monaco': 'MCO', 'Montenegro': 'MNE', 'Netherlands': 'NLD',
+      'North Macedonia': 'MKD', 'Norway': 'NOR', 'Poland': 'POL', 'Portugal': 'PRT',
+      'Romania': 'ROU', 'Russia': 'RUS', 'San Marino': 'SMR', 'Serbia': 'SRB',
+      'Slovakia': 'SVK', 'Slovenia': 'SVN', 'Spain': 'ESP', 'Sweden': 'SWE',
+      'Switzerland': 'CHE', 'Turkey': 'TUR', 'Türkiye': 'TUR', 'Ukraine': 'UKR',
+      'UK': 'GBR', 'United Kingdom': 'GBR', 'Vatican': 'VAT'
     };
 
-    const EUROPE_ISO = new Set(Object.values(COUNTRY_ISO));
+    // Display name for each ISO code (first sheet spelling wins)
+    const ISO_NAME = {};
+    Object.entries(COUNTRY_ISO).forEach(([n, iso]) => { if (!ISO_NAME[iso]) ISO_NAME[iso] = n; });
+
+    const CATS = [
+      { key: 'Clinical Trial', list: 'trials', label: 'Clinical trials', cls: 'trial', colour: '#2563a8', badgeActive: true },
+      { key: 'Access Framework', list: 'frameworks', label: 'Access frameworks', cls: 'framework', colour: '#2d7a3a', badgeActive: true },
+      { key: 'Organisation', list: 'orgs', label: 'Organisations', cls: 'org', colour: '#9b3060', badgeActive: false }
+    ];
 
     const active = { 'Clinical Trial': true, 'Access Framework': true, 'Organisation': true };
-    let allData = {};
+    let dataByIso = {};
     let geoLayer = null;
-    let map = null;
+    let openIso = null;
+    const canHover = window.matchMedia('(hover: hover)').matches;
 
-    const map_ = L.map('map', {
+    const map = L.map('map', {
       center: [54, 15],
       zoom: 4,
       minZoom: 3,
       maxZoom: 8,
-      zoomControl: true
+      zoomSnap: 0.25,
+      maxBounds: [[18, -45], [82, 100]],
+      maxBoundsViscosity: 0.8,
+      attributionControl: true
     });
-    map = map_;
+    map.attributionControl.setPrefix(false);
+    map.attributionControl.addAttribution('Boundaries: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>');
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      subdomains: 'abcd',
-      maxZoom: 19
-    }).addTo(map_);
+    // ---------- Data ----------
 
+    // Full CSV parser: handles commas, quotes ("") and line breaks inside cells
     function parseCSV(text) {
-      const lines = text.trim().split('\n');
-      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-      return lines.slice(1).map(line => {
-        const cols = [];
-        let cur = '', inQ = false;
-        for (let i = 0; i < line.length; i++) {
-          const c = line[i];
-          if (c === '"') { inQ = !inQ; }
-          else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
-          else { cur += c; }
-        }
-        cols.push(cur.trim());
-        const obj = {};
-        headers.forEach((h, i) => { obj[h] = (cols[i] || '').replace(/^"|"$/g, '').trim(); });
-        return obj;
-      });
+      const rows = [];
+      let row = [], cur = '', inQ = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inQ) {
+          if (c === '"' && text[i + 1] === '"') { cur += '"'; i++; }
+          else if (c === '"') inQ = false;
+          else cur += c;
+        } else if (c === '"') inQ = true;
+        else if (c === ',') { row.push(cur); cur = ''; }
+        else if (c === '\n' || c === '\r') {
+          if (c === '\r' && text[i + 1] === '\n') i++;
+          row.push(cur); rows.push(row); row = []; cur = '';
+        } else cur += c;
+      }
+      if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+      const headers = rows.shift().map(h => h.trim());
+      return rows
+        .filter(r => r.some(v => v.trim() !== ''))
+        .map(r => {
+          const o = {};
+          headers.forEach((h, i) => { o[h] = (r[i] || '').replace(/ /g, ' ').trim(); });
+          return o;
+        });
     }
+
+    function normaliseStatus(s) {
+      const v = (s || '').toLowerCase();
+      if (v.startsWith('upcoming')) return 'upcoming';
+      if (v.startsWith('expired') || v.includes('archived')) return 'expired';
+      return 'active';
+    }
+
+    const STATUS_LABEL = { active: 'Active', upcoming: 'Upcoming', expired: 'Expired / archived' };
+    const STATUS_ORDER = { active: 0, upcoming: 1, expired: 2 };
 
     function buildCountryData(rows) {
       const d = {};
+      const unknown = new Set();
       rows.forEach(row => {
         const country = row['Country'];
         if (!country) return;
-        if (!d[country]) d[country] = { trials: [], frameworks: [], orgs: [], hasUpcoming: false };
-        const entry = {
+        const iso = COUNTRY_ISO[country];
+        if (!iso) { unknown.add(country); return; }
+        if (!d[iso]) d[iso] = { name: country, trials: [], frameworks: [], orgs: [] };
+        const cat = CATS.find(c => c.key === row['Category']);
+        if (!cat) return;
+        d[iso][cat.list].push({
           title: row['Title'] || '',
           description: row['Description'] || '',
           url: row['URL'] || '',
           image: row['Image'] || '',
-          status: row['Status'] || 'Active'
-        };
-        if (row['Status'] === 'Upcoming') d[country].hasUpcoming = true;
-        const cat = row['Category'];
-        if (cat === 'Clinical Trial') d[country].trials.push(entry);
-        else if (cat === 'Access Framework') d[country].frameworks.push(entry);
-        else if (cat === 'Organisation') d[country].orgs.push(entry);
+          status: normaliseStatus(row['Status'])
+        });
       });
+      // Active first, then upcoming, then expired; original sheet order kept within each
+      Object.values(d).forEach(cd => CATS.forEach(c =>
+        cd[c.list] = cd[c.list].map((e, i) => [e, i])
+          .sort((a, b) => STATUS_ORDER[a[0].status] - STATUS_ORDER[b[0].status] || a[1] - b[1])
+          .map(x => x[0])));
+      if (unknown.size) console.warn('Countries in the sheet not recognised by the map:', [...unknown]);
       return d;
     }
 
-    function hasVisible(countryData) {
-      return (active['Clinical Trial'] && countryData.trials.length > 0) ||
-        (active['Access Framework'] && countryData.frameworks.length > 0) ||
-        (active['Organisation'] && countryData.orgs.length > 0);
+    function visibleCats(cd) {
+      return cd ? CATS.filter(c => active[c.key] && cd[c.list].length > 0) : [];
     }
 
-    function getColor(countryData) {
-      const t = active['Clinical Trial'] && countryData.trials.length > 0;
-      const f = active['Access Framework'] && countryData.frameworks.length > 0;
-      const o = active['Organisation'] && countryData.orgs.length > 0;
-      const count = [t, f, o].filter(Boolean).length;
-      if (count > 1) return '#6b3fa0';
-      if (t) return '#2563a8';
-      if (f) return '#2d7a3a';
-      if (o) return '#9b3060';
-      return null;
+    // ---------- Rendering helpers ----------
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
     }
 
-    function buildPopup(country, cd) {
-      let html = '<div class="popup-inner">';
-      html += '<div class="popup-country">' + country + '</div>';
+    function safeUrl(u) {
+      return /^(https?:\/\/|\.\/|\/)/i.test(u) ? u : '';
+    }
 
-      if (active['Clinical Trial'] && cd.trials.length > 0) {
-        html += '<div class="popup-section"><div class="popup-label trial">Clinical trials</div>';
-        cd.trials.forEach(e => {
-          html += '<div class="popup-item">';
-          if (e.title) html += '<span class="item-title">' + e.title + '</span>';
-          if (e.description) html += '<span class="item-desc">' + e.description + '</span>';
-          if (e.url) html += '<a href="' + e.url + '" target="_blank" rel="noopener">More information &#8599;</a>';
-          if (e.status === 'Upcoming') html += '<span class="popup-upcoming">Upcoming</span>';
-          html += '</div>';
-        });
-        html += '</div>';
+    function tooltipHtml(iso) {
+      const cd = dataByIso[iso];
+      const name = cd ? cd.name : (ISO_NAME[iso] || '');
+      let html = '<div class="tip-name">' + esc(name) + '</div>';
+      const cats = visibleCats(cd);
+      if (!cats.length) return html + '<div class="tip-empty">No data yet</div>';
+      cats.forEach(c => {
+        const items = cd[c.list];
+        const n = items.length;
+        const exp = items.filter(e => e.status === 'expired').length;
+        const up = items.filter(e => e.status === 'upcoming').length;
+        const extras = [up ? up + ' upcoming' : '', exp ? exp + ' expired' : ''].filter(Boolean).join(', ');
+        html += '<div class="tip-row"><span class="tip-dot" style="background:' + c.colour + '"></span>' +
+          n + ' ' + (n === 1 ? c.label.replace(/s$/, '').toLowerCase() : c.label.toLowerCase()) +
+          (extras ? ' <span style="color:#999">(' + extras + ')</span>' : '') + '</div>';
+      });
+      return html + '<div class="tip-cta">Click for details</div>';
+    }
+
+    function itemHtml(e, cat) {
+      const url = safeUrl(e.url);
+      const img = safeUrl(e.image);
+      let html = '<div class="item' + (e.status === 'expired' ? ' expired' : '') + '">';
+      html += '<div class="item-main">';
+      if (url) {
+        html += '<a class="item-title" href="' + esc(url) + '" target="_blank" rel="noopener">' +
+          esc(e.title || 'View details') + '<span class="ext" aria-hidden="true">&#8599;</span></a>';
+      } else {
+        html += '<div class="item-title">' + esc(e.title) + '</div>';
       }
-
-      if (active['Access Framework'] && cd.frameworks.length > 0) {
-        html += '<div class="popup-section"><div class="popup-label framework">Access frameworks</div>';
-        cd.frameworks.forEach(e => {
-          html += '<div class="popup-item">';
-          if (e.title) html += '<span class="item-title">' + e.title + '</span>';
-          else if (e.url) html += '<a href="' + e.url + '" target="_blank" rel="noopener">View framework &#8599;</a>';
-          if (e.description) html += '<span class="item-desc">' + e.description + '</span>';
-          if (e.title && e.url) html += '<a href="' + e.url + '" target="_blank" rel="noopener">More information &#8599;</a>';
-          html += '</div>';
-        });
-        html += '</div>';
+      if (e.description) html += '<div class="item-desc">' + esc(e.description) + '</div>';
+      if (e.status !== 'active' || cat.badgeActive) {
+        html += '<span class="badge ' + e.status + '">' + STATUS_LABEL[e.status] + '</span>';
       }
-
-      if (active['Organisation'] && cd.orgs.length > 0) {
-        html += '<div class="popup-section"><div class="popup-label org">Organisations</div>';
-        cd.orgs.forEach(e => {
-          html += '<div class="popup-item">';
-          html += '<div class="popup-item-header">';
-          if (e.image) html += '<img src="' + e.image + '" alt="" onerror="this.style.display=\'none\'">';
-          if (e.title) html += '<span class="item-title">' + e.title + '</span>';
-          html += '</div>';
-          if (e.description) html += '<span class="item-desc">' + e.description + '</span>';
-          if (e.url) html += '<a href="' + e.url + '" target="_blank" rel="noopener">Visit website &#8599;</a>';
-          if (e.status === 'Upcoming') html += '<span class="popup-upcoming">Upcoming</span>';
-          html += '</div>';
-        });
-        html += '</div>';
-      }
-
+      html += '</div>';
+      if (img) html += '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.remove()">';
       html += '</div>';
       return html;
     }
 
+    // ---------- Panel ----------
+
+    const panel = document.getElementById('panel');
+    const panelTitle = document.getElementById('panel-title');
+    const panelBody = document.getElementById('panel-body');
+
+    function openPanel(iso) {
+      const cd = dataByIso[iso];
+      const cats = visibleCats(cd);
+      if (!cats.length) { closePanel(); return; }
+      openIso = iso;
+      panelTitle.textContent = cd.name;
+      panelBody.innerHTML = cats.map(c =>
+        '<div class="section"><div class="section-label ' + c.cls + '"><span>' + c.label + '</span><span>' +
+        cd[c.list].length + '</span></div>' + cd[c.list].map(e => itemHtml(e, c)).join('') + '</div>'
+      ).join('');
+      panelBody.scrollTop = 0;
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      refreshMap();
+    }
+
+    function closePanel() {
+      openIso = null;
+      panel.classList.remove('open');
+      panel.setAttribute('aria-hidden', 'true');
+      refreshMap();
+    }
+
+    document.querySelector('.panel-close').addEventListener('click', closePanel);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+    // Stop scrolling/clicks in the panel from moving the map
+    L.DomEvent.disableScrollPropagation(panel);
+    L.DomEvent.disableClickPropagation(panel);
+
+    // ---------- Map styling ----------
+
     function styleFeature(feature) {
-      const iso = feature.properties.ISO_A3;
-      const name = Object.keys(COUNTRY_ISO).find(k => COUNTRY_ISO[k] === iso);
-      const cd = name ? allData[name] : null;
-
-      if (!EUROPE_ISO.has(iso)) {
-        return { fillColor: '#e8e4df', fillOpacity: 0, weight: 0, color: 'transparent' };
+      const p = feature.properties;
+      if (!p.europe) {
+        return { fillColor: COLOURS.land, fillOpacity: 1, weight: 0.6, color: '#fff', opacity: 1, interactive: false };
       }
-
-      if (!cd || !hasVisible(cd)) {
-        return {
-          fillColor: '#d4d0ca',
-          fillOpacity: 0.7,
-          weight: 1,
-          color: '#fff',
-          opacity: 1
-        };
-      }
-
+      const has = visibleCats(dataByIso[p.ISO_A3]).length > 0;
+      const selected = openIso === p.ISO_A3;
       return {
-        fillColor: getColor(cd),
-        fillOpacity: 0.75,
-        weight: 1.5,
-        color: '#fff',
+        fillColor: has ? COLOURS.data : COLOURS.nodata,
+        fillOpacity: has ? (selected ? 0.95 : 0.75) : 0.8,
+        weight: selected ? 2.5 : 1,
+        color: selected ? '#3d2166' : '#fff',
         opacity: 1
       };
     }
 
     function onEachFeature(feature, layer) {
-      const iso = feature.properties.ISO_A3;
-      if (!EUROPE_ISO.has(iso)) return;
+      const p = feature.properties;
+      if (!p.europe) return;
+      const iso = p.ISO_A3;
 
-      const name = Object.keys(COUNTRY_ISO).find(k => COUNTRY_ISO[k] === iso);
-      const cd = name ? allData[name] : null;
+      if (canHover) {
+        layer.bindTooltip(() => tooltipHtml(iso), { sticky: true, direction: 'auto', className: 'country-tip', offset: [14, 0] });
+      }
 
       layer.on({
-        mouseover: function (e) {
-          if (!cd || !hasVisible(cd)) return;
-          this.setStyle({ fillOpacity: 0.95, weight: 2 });
+        mouseover: function () {
+          if (visibleCats(dataByIso[iso]).length) {
+            this.setStyle({ fillOpacity: 0.95, weight: 2 });
+            this.bringToFront();
+          }
         },
-        mouseout: function (e) {
-          if (geoLayer) geoLayer.resetStyle(this);
-        },
-        click: function (e) {
-          if (!cd || !hasVisible(cd)) return;
-          L.popup({ maxWidth: 320, className: 'parea-popup' })
-            .setLatLng(e.latlng)
-            .setContent(buildPopup(name, cd))
-            .openOn(map_);
+        mouseout: function () { this.setStyle(styleFeature(feature)); },
+        click: function () {
+          if (visibleCats(dataByIso[iso]).length) { this.closeTooltip && this.closeTooltip(); openPanel(iso); }
+          else closePanel();
         }
       });
     }
@@ -601,36 +584,34 @@
       if (geoLayer) geoLayer.setStyle(styleFeature);
     }
 
+    map.on('click', e => { if (!e.originalEvent.defaultPrevented && e.originalEvent.target === map.getContainer()) closePanel(); });
+
     document.querySelectorAll('.toggle-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         const cat = this.dataset.cat;
         active[cat] = !active[cat];
         this.classList.toggle('active', active[cat]);
+        this.setAttribute('aria-pressed', active[cat]);
         refreshMap();
+        if (openIso) openPanel(openIso); // re-render or close if nothing left
       });
     });
+
+    // ---------- Load ----------
 
     async function loadData() {
       try {
         const csvRes = await fetch(CSV_URL);
-        const csvText = await csvRes.text();
-        const rows = parseCSV(csvText);
-        allData = buildCountryData(rows);
+        dataByIso = buildCountryData(parseCSV(await csvRes.text()));
       } catch (e) {
         console.warn('Could not load live data, map will show geography only.', e);
       }
 
       try {
-        const geoRes = await fetch(GEOJSON_URL);
-        const geoData = await geoRes.json();
-        geoLayer = L.geoJSON(geoData, {
-          style: styleFeature,
-          onEachFeature: onEachFeature,
-          filter: function (feature) {
-            return EUROPE_ISO.has(feature.properties.ISO_A3);
-          }
-        }).addTo(map_);
-        map_.fitBounds(geoLayer.getBounds(), { padding: [20, 20] });
+        const geoData = await (await fetch(GEOJSON_URL)).json();
+        geoLayer = L.geoJSON(geoData, { style: styleFeature, onEachFeature }).addTo(map);
+        // Frame mainland Europe plus Iceland, Cyprus and Turkey
+        map.fitBounds([[34, -24], [70, 40]], { padding: [10, 10] });
       } catch (e) {
         console.error('Could not load map geography.', e);
       }
